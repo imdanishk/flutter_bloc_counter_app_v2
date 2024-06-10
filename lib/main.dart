@@ -1,39 +1,42 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_bloc_counter_app_v2/logic/cubit/counter_cubit.dart';
+import 'package:flutter_bloc_counter_app_v2/logic/cubit/internet_cubit.dart';
 import 'package:flutter_bloc_counter_app_v2/presentation/router/app_router.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(MyApp(
+    appRouter: AppRouter(),
+    connectivity: Connectivity(),
+  ));
 }
 
 class MyApp extends StatelessWidget {
-  MyApp({super.key});
+  final AppRouter appRouter;
+  final Connectivity connectivity;
 
-  final AppRouter _appRouter = AppRouter();
+  const MyApp({super.key, required this.appRouter, required this.connectivity});
+
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<CounterCubit>(
-      create: (context) => CounterCubit(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<InternetCubit>(
+          create: (context) => InternetCubit(connectivity: connectivity),
+        ),
+        BlocProvider<CounterCubit>(
+          create: (context) => CounterCubit(),
+        ),
+      ],
       child: MaterialApp(
         title: 'Flutter Demo',
         theme: ThemeData(
           primarySwatch: Colors.blue,
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
-        onGenerateRoute: (settings) {
-          // Generate route with appropriate arguments
-          if (settings.name == '/second') {
-            return _appRouter.onGenerateRoute(
-              RouteSettings(
-                name: settings.name,
-                arguments: GlobalKey<ScaffoldMessengerState>(),
-              ),
-            );
-          }
-          return _appRouter.onGenerateRoute(settings);
-        },
+        onGenerateRoute: appRouter.onGenerateRoute,
       ),
     );
   }
